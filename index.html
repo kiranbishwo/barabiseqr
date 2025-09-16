@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Redirect</title>
+  <script>
+    window.onload = function () {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+      if (/android/i.test(userAgent)) {
+        // Redirect Android → Play Store
+        window.location.replace("https://play.google.com/store/apps/details?id=com.barabise.app");
+      } else if (/iPhone|iPad|iPod/i.test(userAgent)) {
+        // Redirect iOS → App Store
+        window.location.replace("https://apps.apple.com/np/app/barabise-online-shopping-nepal/id6751567977");
+      } else {
+        // Redirect others (PC, unknown) → Website or landing page
+        window.location.replace("https://barabise.com");
+      }
+    };
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html>
