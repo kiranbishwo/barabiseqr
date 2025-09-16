@@ -8,7 +8,9 @@ app.secret_key = 'your-secret-key-change-in-production'  # Change this in produc
 
 # Database setup
 def init_db():
-    conn = sqlite3.connect('clicks.db')
+    # Use absolute path for production
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'clicks.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS clicks (
@@ -104,7 +106,8 @@ def track_click():
         ip_address = request.remote_addr
         
         # Insert click data into database
-        conn = sqlite3.connect('clicks.db')
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'clicks.db')
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO clicks (user_agent, platform, redirect_url, ip_address)
@@ -121,7 +124,8 @@ def track_click():
 @login_required
 def stats():
     try:
-        conn = sqlite3.connect('clicks.db')
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'clicks.db')
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
         # Get total clicks
@@ -205,7 +209,8 @@ def add_link():
             flash('Name, URL, and platform are required.', 'error')
             return redirect(url_for('stats'))
         
-        conn = sqlite3.connect('clicks.db')
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'clicks.db')
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
         # Check if we already have 3 links
@@ -231,7 +236,8 @@ def add_link():
 @login_required
 def delete_link(link_id):
     try:
-        conn = sqlite3.connect('clicks.db')
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'clicks.db')
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute('DELETE FROM links WHERE id = ?', (link_id,))
         conn.commit()
