@@ -518,6 +518,10 @@
                 grid-template-columns: 1fr;
             }
             
+            .date-filter-form {
+                grid-template-columns: 1fr !important;
+            }
+            
             .header-section {
                 text-align: center;
             }
@@ -588,6 +592,39 @@
                     <a href="/redirect" class="btn btn-success">Redirect Page</a>
                     <a href="/logout" class="btn btn-danger">Logout</a>
                 </div>
+            </div>
+        </div>
+
+        <!-- Date Filter Section -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <h2 class="card-title">Date Filter</h2>
+                <div class="card-subtitle">Filter analytics data by date range</div>
+            </div>
+            
+            <form method="GET" action="/stats" class="date-filter-form" style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 16px; align-items: end;">
+                <div class="form-group">
+                    <label class="form-label">From Date</label>
+                    <input type="date" name="from_date" class="form-control" value="{{ from_date }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">To Date</label>
+                    <input type="date" name="to_date" class="form-control" value="{{ to_date }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Apply Filter</button>
+                <a href="/stats" class="btn">Clear Filter</a>
+            </form>
+            
+            <div style="margin-top: 12px; padding: 12px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; font-size: 14px; color: #0c4a6e;">
+                <strong>Current Filter:</strong> 
+                {% if from_date == to_date %}
+                    {{ from_date }} (Single Day)
+                    {% if from_date == today_date %}
+                        <span style="color: #059669; font-weight: 600;">(Today)</span>
+                    {% endif %}
+                {% else %}
+                    {{ from_date }} to {{ to_date }}
+                {% endif %}
             </div>
         </div>
 
@@ -906,6 +943,11 @@
         function goToPage(page) {
             const url = new URL(window.location);
             url.searchParams.set('page', page);
+            // Preserve date filters
+            const fromDate = document.querySelector('input[name="from_date"]').value;
+            const toDate = document.querySelector('input[name="to_date"]').value;
+            if (fromDate) url.searchParams.set('from_date', fromDate);
+            if (toDate) url.searchParams.set('to_date', toDate);
             window.location.href = url.toString();
         }
     </script>

@@ -124,64 +124,93 @@ def track_click():
 @login_required
 def stats():
     try:
+        # Get date filter parameters
+        from_date = request.args.get('from_date')
+        to_date = request.args.get('to_date')
+        
+        # If no dates provided, default to today
+        if not from_date and not to_date:
+            today = datetime.datetime.now().strftime('%Y-%m-%d')
+            from_date = today
+            to_date = today
+        
+        # If only from_date is provided, set to_date to from_date
+        if from_date and not to_date:
+            to_date = from_date
+        
+        # If only to_date is provided, set from_date to to_date
+        if to_date and not from_date:
+            from_date = to_date
+        
+        # Build date filter condition
+        date_filter = "WHERE DATE(timestamp) BETWEEN ? AND ?"
+        date_params = (from_date, to_date)
+        
         db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'clicks.db')
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Get total clicks
-        cursor.execute('SELECT COUNT(*) FROM clicks')
+        # Get total clicks with date filter
+        cursor.execute(f'SELECT COUNT(*) FROM clicks {date_filter}', date_params)
         total_clicks = cursor.fetchone()[0]
         
-        # Get clicks by platform
-        cursor.execute('''
+        # Get clicks by platform with date filter
+        cursor.execute(f'''
             SELECT platform, COUNT(*) as count 
             FROM clicks 
+            {date_filter}
             GROUP BY platform 
             ORDER BY count DESC
-        ''')
+        ''', date_params)
         platform_stats = cursor.fetchall()
         
-        # Get recent clicks with pagination
+        # Get recent clicks with pagination and date filter
         page = request.args.get('page', 1, type=int)
         per_page = 5
         offset = (page - 1) * per_page
         
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT platform, redirect_url, timestamp 
             FROM clicks 
+            {date_filter}
             ORDER BY timestamp DESC 
             LIMIT ? OFFSET ?
-        ''', (per_page, offset))
+        ''', date_params + (per_page, offset))
         recent_clicks = cursor.fetchall()
         
-        # Get total count for pagination
-        cursor.execute('SELECT COUNT(*) FROM clicks')
+        # Get total count for pagination with date filter
+        cursor.execute(f'SELECT COUNT(*) FROM clicks {date_filter}', date_params)
         total_clicks_count = cursor.fetchone()[0]
         total_pages = (total_clicks_count + per_page - 1) // per_page
         
-        # Get all saved links
+        # Get all saved links (no date filter needed for links)
         cursor.execute('SELECT id, name, url, platform, created_at FROM links ORDER BY created_at DESC')
         saved_links = cursor.fetchall()
         
-        # Get platform-specific click counts
-        cursor.execute('''
+        # Get platform-specific click counts with date filter
+        cursor.execute(f'''
             SELECT platform, COUNT(*) as count 
             FROM clicks 
-            WHERE platform IN ('Android', 'iOS', 'Desktop/Other')
+            {date_filter}
+            AND platform IN ('Android', 'iOS', 'Desktop/Other')
             GROUP BY platform
-        ''')
+        ''', date_params)
         platform_click_counts = cursor.fetchall()
         
-        # Get link-specific click counts
-        cursor.execute('''
+        # Get link-specific click counts with date filter
+        cursor.execute(f'''
             SELECT redirect_url, platform, COUNT(*) as count 
             FROM clicks 
+            {date_filter}
             GROUP BY redirect_url, platform
             ORDER BY count DESC
-        ''')
+        ''', date_params)
         link_click_counts = cursor.fetchall()
         
         conn.close()
+        
+        # Get today's date for comparison
+        today_date = datetime.datetime.now().strftime('%Y-%m-%d')
         
         return render_template('stats.html', 
                              total_clicks=total_clicks,
@@ -193,7 +222,10 @@ def stats():
                              user_email=session.get('email', ''),
                              current_page=page,
                              total_pages=total_pages,
-                             total_clicks_count=total_clicks_count)
+                             total_clicks_count=total_clicks_count,
+                             from_date=from_date,
+                             to_date=to_date,
+                             today_date=today_date)
     except Exception as e:
         return f"Error: {str(e)}", 500
 
